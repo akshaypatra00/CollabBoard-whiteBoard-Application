@@ -1,160 +1,128 @@
 # CollabBoard
 
-A real-time collaborative whiteboard application inspired by Excalidraw, built from the ground up using React, a native HTML5 Canvas 2D engine, Node.js, Express, Socket.IO, and MongoDB.
+CollabBoard is a collaborative whiteboard for sketching ideas, making
+diagrams, and taking visual notes. It uses a native HTML Canvas drawing
+engine and lets people work on the same board in real time.
 
-CollabBoard allows users to sketch, build diagrams, take visual notes, and collaborate with others in real time without creating an account or logging in. Any whiteboard can be shared instantly using a unique URL.
+You do not need an account. Create a board and share its link with
+anyone who needs to join.
 
----
+## Features
 
-## Key Features
+-   **Drawing tools:** selection, freehand pencil, rectangle, ellipse,
+    line, arrow, text, and eraser.
+-   **Edit shapes:** select, move, resize, duplicate, copy, paste, and
+    delete elements.
+-   **Style controls:** change stroke color, fill color, stroke width,
+    line style, and text formatting.
+-   **Canvas navigation:** zoom, pan, reset zoom, and fit the drawing to
+    the screen.
+-   **Undo and redo:** reverse completed drawing actions.
+-   **Live collaboration:** work with other people on the same board and
+    see their cursors.
+-   **Automatic saving:** store board data in MongoDB when the database
+    is available.
+-   **PNG export:** export the current drawing as an image.
+-   **Light and dark themes:** choose a theme that suits your workspace.
+-   **Recent boards:** find boards you have opened recently in the same
+    browser.
 
-- **Native HTML5 Canvas 2D Drawing Engine**: No external canvas wrappers or heavy drawing frameworks. Elements are stored as typed state and rendered to the canvas at high device pixel ratios.
-- **Vector Tools**: Selection, freehand pencil (with midpoint smoothing), rectangle, ellipse, line, arrow, text, and element eraser.
-- **Shape & Style Properties**: Real-time adjustment of stroke colors, background/fill colors, stroke widths (2px to 16px), stroke styles (solid, dashed, dotted), font sizes, and text alignments.
-- **Manipulation & Transforms**: Single and multi-element selection, bounding box dragging, 8-handle resizing, element duplication, deletion, and copy/paste.
-- **Infinite Navigation & Zoom**: Smooth mouse wheel zooming centered on the cursor, middle-click panning, spacebar pan shortcut, zoom reset, and fit-to-content.
-- **Predictable History (Undo / Redo)**: Snapshot-based undo and redo history stack (up to 50 operations) that triggers on completed actions, not raw pointer movements.
-- **Real-Time Collaboration**: Multi-user rooms powered by Socket.IO with live remote cursor positions, user name tags, and broadcasted element operations.
-- **Anonymous Bearer Sharing**: Instant board creation without authentication; shareable URLs grant access to collaborators immediately.
-- **Resilient Persistence**: MongoDB storage via Mongoose with debounced saves, optimistic local UI feedback, and an automatic in-memory fallback for local environments without an active MongoDB daemon.
-- **Board Export**: Clean export of active drawing elements to PNG using an offscreen canvas.
-- **Theme Support**: Seamless light and dark mode with localStorage persistence.
-- **Local History**: Landing page tracks recently opened boards in browser storage for quick re-entry.
+## Tech stack
 
----
+**Frontend** - React, TypeScript, and Vite - HTML Canvas 2D API -
+Tailwind CSS - React Router - Zustand - Socket.IO Client - Lucide React
 
-## Technology Stack
+**Backend** - Node.js, Express, and TypeScript - Socket.IO - MongoDB and
+Mongoose - Zod for request and event validation - Helmet, CORS, and rate
+limiting
 
-### Frontend (`client/`)
-- **React 18** with **TypeScript**
-- **Vite** for bundling and fast HMR
-- **HTML5 Canvas 2D API** (native rendering engine)
-- **Tailwind CSS** for layout, styling, and dark mode
-- **React Router 6** for routing
-- **Zustand** for modular client state management
-- **Socket.IO Client** for real-time WebSockets
-- **Lucide React** for icons
-- **Vitest** for client unit and utility testing
+**Shared code and testing** - Shared TypeScript types and Zod schemas -
+Vitest and Supertest
 
-### Backend (`server/`)
-- **Node.js** & **Express** with **TypeScript**
-- **Socket.IO** for WebSocket rooms and synchronization
-- **MongoDB** & **Mongoose** for persistence
-- **Zod** for runtime schema validation on HTTP requests and socket events
-- **express-rate-limit** for rate limiting sensitive endpoints
-- **Helmet** & **CORS** for HTTP security headers
-- **Vitest** & **Supertest** for automated API, validation, and concurrency tests
+## How it works
 
-### Shared Contract (`shared/`)
-- Shared TypeScript types (elements, tools, boards, socket events)
-- Shared Zod validation schemas for elements, board routes, and socket payloads
+The canvas is used to draw the board, but the drawing is stored as
+structured data rather than as a screenshot. Each shape has properties
+such as its type, position, size, and style. This makes it possible to
+select and edit elements, save the board, and send changes to other
+collaborators.
 
----
+The React client handles the interface and local drawing interactions.
+The Express server provides the board API, while Socket.IO sends live
+changes between clients in the same board room. MongoDB stores board
+data so it can be loaded again later.
 
-## Application Architecture
+## Project structure
 
-```
-collab-whiteboard/
-├── client/                     # Vite + React Frontend
+``` text
+collabboard/
+├── client/
 │   ├── src/
-│   │   ├── canvas/             # Native Canvas 2D engine (renderer, hit-testing, transforms, handles, export)
-│   │   ├── components/         # Header, Toolbar, PropertiesPanel, ZoomControls, Modals, RecentBoards
-│   │   ├── hooks/              # useCanvasPointer, useKeyboardShortcuts, useSocket, useAutoSave, useTheme
-│   │   ├── pages/              # LandingPage, WhiteboardPage, NotFoundPage
-│   │   ├── services/           # REST API client and localStorage persistence
-│   │   ├── store/              # Zustand stores (useBoardStore, useToolStore, useHistoryStore, useCollaborationStore)
-│   │   └── utils/              # Geometry math, bounding boxes, color palettes, ID generator
-│   └── tests/                  # Client Vitest suites (geometry, hitTest, transform, history)
-├── server/                     # Express + Socket.IO Backend
+│   │   ├── canvas/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── store/
+│   │   └── utils/
+│   └── tests/
+├── server/
 │   ├── src/
-│   │   ├── config/             # Environment parsing (Zod) and MongoDB connection manager
-│   │   ├── controllers/        # Board HTTP route handlers
-│   │   ├── middleware/         # Zod validation, rate limiters, centralized error handling
-│   │   ├── models/             # Mongoose BoardModel schema
-│   │   ├── routes/             # REST API routes (/api/health, /api/boards)
-│   │   ├── services/           # BoardService with LWW conflict resolution and storage logic
-│   │   ├── sockets/            # SocketManager and socket event handlers
-│   │   └── utils/              # Structured logger, ID generator
-│   └── tests/                  # Backend Vitest suites (REST API, validation, concurrency)
-└── shared/                     # Shared TypeScript library
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── sockets/
+│   │   └── utils/
+│   └── tests/
+└── shared/
     └── src/
-        ├── types/              # WhiteboardElement, Board, Tool, Socket types
-        ├── schemas/            # Zod validation schemas
-        └── events/             # Socket event constants
+        ├── events/
+        ├── schemas/
+        └── types/
 ```
 
----
+The exact files may vary as the project develops. The `client` folder
+contains the frontend, `server` contains the API and real-time services,
+and `shared` contains types and validation contracts used by both.
 
-## Drawing Data Model
+## Requirements
 
-The application does not store canvas bitmaps or rasterized images. The board is represented as a structured array of vector elements:
+Before running the project, install:
 
-```typescript
-type ElementType = 'rectangle' | 'ellipse' | 'line' | 'arrow' | 'pencil' | 'text';
+-   Node.js 18 or later (Node.js 20 or later is recommended)
+-   npm
+-   MongoDB, either running locally or hosted by MongoDB Atlas
 
-interface BaseElement {
-  id: string;               // 10-character unique identifier
-  type: ElementType;
-  x: number;                // World coordinate X
-  y: number;                // World coordinate Y
-  width: number;
-  height: number;
-  strokeColor: string;      // Hex, rgb, or transparent
-  fillColor: string;
-  strokeWidth: number;      // 1 to 32
-  strokeStyle: 'solid' | 'dashed' | 'dotted';
-  opacity: number;          // 0 to 100
-  rotation: number;         // Rotation in radians
-  version: number;          // Monotonic revision counter for LWW conflict resolution
-  updatedAt: number;        // Epoch timestamp in milliseconds
-  isDeleted?: boolean;
-}
+MongoDB may be optional for some local development configurations if the
+server supports its in-memory fallback. In-memory data is temporary and
+should not be used for production persistence.
+
+## Getting started
+
+### 1. Clone the repository
+
+``` bash
+git clone https://github.com/akshaypatra00/CollabBoard-whiteBoard-Application.git
+cd CollabBoard-whiteBoard-Application
 ```
 
-Shape-specific fields:
-- **`pencil`**: `points: Point[]` (clamped to a maximum of 3,000 points to prevent payload abuse).
-- **`line` / `arrow`**: `points: [Point, Point]` representing start and end points in world coordinates.
-- **`text`**: `text: string`, `fontSize: number`, `fontFamily: string`, `textAlign: 'left' | 'center' | 'right'`.
+### 2. Install dependencies
 
----
+If the repository is configured as an npm workspace, install
+dependencies from the root:
 
-## Conflict Resolution & Real-Time Sync
+``` bash
+npm install
+```
 
-When multiple collaborators work on the same board concurrently:
-1. **Isolated Rooms**: Clients join a Socket.IO room scoped to `boardId`. Events sent outside the joined room are rejected by the server.
-2. **Optimistic Local Updates**: The active user sees their changes applied immediately on the native canvas.
-3. **Last-Write-Wins (LWW)**: Every element edit increments its `version` counter and updates `updatedAt`. Incoming remote updates supersede existing state only if `incoming.version > existing.version` or `incoming.updatedAt >= existing.updatedAt`. Stale packets are discarded safely.
-4. **Debounced MongoDB Persistence**: Real-time socket events do not write to MongoDB synchronously on every cursor or draw event. Updates are queued and flushed after a debounce period (1.5 seconds of inactivity) or when a room empties, preserving database throughput.
-5. **Transient Cursors**: Live collaborator cursors and names are broadcast transiently over WebSocket and are never saved to the database.
+### 3. Configure environment variables
 
----
+Create `server/.env`:
 
-## Anonymous Access Model & Security Considerations
-
-CollabBoard intentionally operates **without user registration, logins, or passwords**.
-
-### How Sharing Works
-- Creating a board generates a 12-character cryptographically random, unguessable board ID (e.g., `k8xL29vN4p1Q`).
-- Anyone with the board link (`https://<domain>/board/<id>`) can view and edit the board.
-
-### Security Boundaries & Safeguards
-- **Bearer Link Model**: An unguessable URL acts as a bearer token. It does not provide cryptographic access control or authentication.
-- **Input Validation**: All REST bodies, URL parameters, and Socket.IO payloads are strictly validated using Zod on the server.
-- **Point & Size Limits**: Pencil strokes are limited to 3,000 points, text inputs to 10,000 characters, and request JSON bodies to 10MB to prevent denial-of-service attempts.
-- **Rate Limiting**: Board creation is rate-limited to 60 requests per hour per IP; general API calls are limited to 500 requests per 15 minutes.
-- **Safe Text Rendering**: User-entered text is drawn directly using Canvas 2D `fillText` or escaped React nodes. Raw HTML is never executed.
-- **Production Information Leakage**: Stack traces and internal database errors are suppressed in production mode.
-
-> **Important**: Do not store sensitive, confidential, or private credentials on public whiteboard links.
-
----
-
-## Environment Variables
-
-### Backend (`server/.env`)
-Create a `.env` file in the `server` directory (reference in `server/.env.example`):
-
-```bash
+``` env
 PORT=5000
 NODE_ENV=development
 MONGODB_URI=mongodb://127.0.0.1:27017/collab_whiteboard
@@ -162,201 +130,203 @@ CORS_ORIGIN=http://localhost:5173
 CLIENT_URL=http://localhost:5173
 ```
 
-- If `MONGODB_URI` cannot connect during local development or test runs, the server automatically operates in in-memory mode without crashing.
+Create `client/.env`:
 
-### Frontend (`client/.env`)
-Create a `.env` file in the `client` directory (reference in `client/.env.example`):
-
-```bash
+``` env
 VITE_API_URL=http://localhost:5000/api
 VITE_SOCKET_URL=http://localhost:5000
 ```
 
----
+Use the variable names expected by your code and the provided
+`.env.example` files if they differ. Never commit real `.env` files,
+database passwords, or API secrets. Keep example files with placeholder
+values in the repository.
 
-## Prerequisites
+### 4. Start the application
 
-- **Node.js**: v18.0.0 or higher (v20+ recommended)
-- **npm**: v9.0.0 or higher
-- **MongoDB** (optional for development; required for persistent production deployment)
+If the root `package.json` provides workspace scripts, the usual
+development command is:
 
----
+``` bash
+npm run dev
+```
 
-## Installation & Local Development Setup
+If the project provides separate scripts, start the backend and frontend
+in two terminals from the repository root:
 
-1. **Clone or navigate to the repository**:
-   ```bash
-   cd "Whiteboard application"
-   ```
-
-2. **Install all workspace dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Build the shared package**:
-   ```bash
-   npm run build:shared
-   ```
-
-4. **Start both Backend and Frontend in development mode**:
-   ```bash
-   npm run dev
-   ```
-   - Frontend runs at: `http://localhost:5173`
-   - Backend API runs at: `http://localhost:5000`
-
-Alternatively, run each service independently:
-```bash
-# Terminal 1: Backend
+``` bash
 npm run dev:server
+```
 
-# Terminal 2: Frontend
+``` bash
 npm run dev:client
 ```
 
----
+Check the root `package.json` for the actual script names. The expected
+local addresses are:
 
-## REST API Documentation
+-   Frontend: `http://localhost:5173`
+-   Backend: `http://localhost:5000`
 
-All endpoints return JSON with a consistent format:
-`{ "success": boolean, "data"?: any, "error"?: string }`
+Open the frontend in your browser and create a board. If the app cannot
+connect to MongoDB, check the backend logs and the `MONGODB_URI` value.
 
-| Method | Endpoint | Description | Request Body |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/health` | Service health status and database connectivity | None |
-| `POST` | `/api/boards` | Create a new board with random ID | `{ "title"?: string }` |
-| `GET` | `/api/boards/:id` | Fetch whiteboard document and elements | None |
-| `PATCH` | `/api/boards/:id` | Update board title metadata | `{ "title": string }` |
-| `PUT` | `/api/boards/:id/elements` | Batch save/sync all drawing elements | `{ "elements": WhiteboardElement[] }` |
-| `GET` | `/api/boards/:id/export` | Download board data as JSON file | None |
+## API overview
 
----
+The documented REST endpoints are:
 
-## Socket.IO Real-Time Events
+  ----------------------------------------------------------------------------
+  Method                  Endpoint                     Purpose
+  ----------------------- ---------------------------- -----------------------
+  `GET`                   `/api/health`                Check server health and
+                                                       database connectivity
 
-### Client to Server
-- `join-board`: `{ boardId: string, clientId: string, userName: string, userColor: string }`
-- `element-create`: `{ boardId: string, element: WhiteboardElement }`
-- `element-update`: `{ boardId: string, elements: WhiteboardElement[] }`
-- `element-delete`: `{ boardId: string, elementIds: string[] }`
-- `board-clear`: `{ boardId: string }`
-- `board-metadata-update`: `{ boardId: string, title: string }`
-- `cursor-move`: `{ boardId: string, clientId: string, userName: string, userColor: string, x: number, y: number }`
+  `POST`                  `/api/boards`                Create a board
 
-### Server to Client
-- `board-state`: `{ boardId: string, title: string, elements: WhiteboardElement[], schemaVersion: number, updatedAt: string }`
-- `element-create`: Broadcasted to room members when an element is added
-- `element-update`: Broadcasted when one or more elements are moved/resized/restyled
-- `element-delete`: Broadcasted when elements are deleted
-- `board-clear`: Broadcasted when the board is reset
-- `board-metadata-update`: Broadcasted when title is edited
-- `cursor-move`: Broadcasted to room members with active collaborator cursor coordinates
-- `client-left`: `{ clientId: string }` emitted when a collaborator disconnects
-- `sync-error`: Emitted to a socket if an action failed validation or authorization
+  `GET`                   `/api/boards/:id`            Load a board
 
----
+  `PATCH`                 `/api/boards/:id`            Update board details
+                                                       such as its title
 
-## Keyboard Shortcuts
+  `PUT`                   `/api/boards/:id/elements`   Save board elements
 
-| Shortcut | Action |
-| :--- | :--- |
-| `V` or `1` | Select Tool |
-| `P` or `2` | Pencil (Freehand) Tool |
-| `R` or `3` | Rectangle Tool |
-| `O` or `4` | Ellipse Tool |
-| `A` or `6` | Arrow Tool |
-| `L` or `5` | Line Tool |
-| `T` or `7` | Text Tool |
-| `X` or `8` | Eraser Tool |
-| `Ctrl + Z` | Undo |
-| `Ctrl + Y` or `Ctrl + Shift + Z` | Redo |
-| `Delete` or `Backspace` | Delete selected elements |
-| `Ctrl + C` | Copy selected elements |
-| `Ctrl + V` | Paste copied elements |
-| `Ctrl + D` | Duplicate selected elements |
-| `Space + Click & Drag` | Pan canvas |
-| `Ctrl + Mouse Wheel` | Zoom in / Zoom out |
-| `Ctrl + 0` | Reset Zoom to 100% |
-| `Esc` | Clear selection or cancel active tool |
+  `GET`                   `/api/boards/:id/export`     Retrieve board data as
+                                                       JSON
+  ----------------------------------------------------------------------------
 
----
+Confirm the routes in `server/src/routes` before relying on this table,
+as endpoint names can change during development.
 
-## Automated Testing
+## Real-time collaboration
 
-Automated test suites cover geometry calculations, hit-testing, coordinate transformations, history undo/redo stacks, REST API endpoints, Zod schema validations, and concurrent conflict resolution:
+Socket.IO connects users who open the same board. The documented event
+names include:
 
-```bash
-# Run all automated tests (client + server)
+**Client to server** - `join-board` - `element-create` -
+`element-update` - `element-delete` - `board-clear` -
+`board-metadata-update` - `cursor-move`
+
+**Server to client** - `board-state` - `element-create` -
+`element-update` - `element-delete` - `board-clear` -
+`board-metadata-update` - `cursor-move` - `client-left` - `sync-error`
+
+The server should validate incoming events and restrict updates to the
+board room the client has joined. Check the socket handlers and shared
+event types for the exact payload shape used by the current
+implementation.
+
+## Keyboard shortcuts
+
+The documented shortcuts are:
+
+  Shortcut                           Action
+  ---------------------------------- ----------------------------------------------
+  `V` or `1`                         Selection tool
+  `P` or `2`                         Pencil tool
+  `R` or `3`                         Rectangle tool
+  `O` or `4`                         Ellipse tool
+  `L` or `5`                         Line tool
+  `A` or `6`                         Arrow tool
+  `T` or `7`                         Text tool
+  `X` or `8`                         Eraser tool
+  `Ctrl + Z`                         Undo
+  `Ctrl + Y` or `Ctrl + Shift + Z`   Redo
+  `Delete` or `Backspace`            Delete selected elements
+  `Ctrl + C`                         Copy selected elements
+  `Ctrl + V`                         Paste copied elements
+  `Ctrl + D`                         Duplicate selected elements
+  `Space + drag`                     Pan the canvas
+  `Ctrl + mouse wheel`               Zoom in or out
+  `Ctrl + 0`                         Reset zoom
+  `Esc`                              Cancel the current action or clear selection
+
+Shortcuts can vary by operating system and browser. Refer to the current
+keyboard shortcut handler for the definitive list.
+
+## Testing and builds
+
+Run the commands supported by the root `package.json`:
+
+``` bash
 npm test
-
-# Run only server tests
-npm run test:server
-
-# Run only client tests
-npm run test:client
-```
-
-All 32 tests execute cleanly without external dependencies.
-
----
-
-## Type Checking & Production Build
-
-Verify TypeScript across all workspaces:
-```bash
 npm run typecheck
-```
-
-Create production bundles for all packages:
-```bash
 npm run build
 ```
-- Client artifacts are compiled to `client/dist/`
-- Server artifacts are compiled to `server/dist/`
-- Shared types and schemas are compiled to `shared/dist/`
 
----
+If tests are split by workspace, the project may also provide:
 
-## Production Deployment Guidance
+``` bash
+npm run test:client
+npm run test:server
+```
 
-### Frontend (Static Hosting: Vercel, Netlify, Cloudflare Pages, S3)
-1. Set environment variable: `VITE_API_URL=https://api.yourdomain.com/api`
-2. Set environment variable: `VITE_SOCKET_URL=https://api.yourdomain.com`
-3. Build command: `npm run build:client`
-4. Output directory: `client/dist`
-5. Configure SPA fallback routing to serve `index.html` for all paths (`/board/*`).
+These commands are examples based on the documented project setup. Check
+the package scripts before running them, and report test results only
+after the tests have actually run.
 
-### Backend (Node.js Service: Render, Railway, Fly.io, AWS ECS, DigitalOcean)
-1. Ensure the host supports persistent WebSocket connections (Socket.IO).
-2. Set environment variables:
-   - `PORT=5000`
-   - `NODE_ENV=production`
-   - `MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/collab_whiteboard`
-   - `CORS_ORIGIN=https://yourwhiteboard.com`
-   - `CLIENT_URL=https://yourwhiteboard.com`
-3. Build command: `npm run build:shared && npm run build:server`
-4. Start command: `node server/dist/index.js`
+## Deployment notes
 
-### MongoDB Atlas Setup
-1. Create a free or dedicated cluster on MongoDB Atlas.
-2. Under Network Access, whitelist your backend service's IP addresses or use `0.0.0.0/0` with secure credentials.
-3. Supply the connection string in the backend `MONGODB_URI`.
+A typical deployment uses:
 
----
+-   A static hosting service for the Vite frontend
+-   A Node.js hosting service that supports persistent Socket.IO
+    connections for the backend
+-   MongoDB Atlas or another reachable MongoDB deployment
 
-## Known Limitations
+Set the frontend API and Socket.IO URLs to the deployed backend address.
+Configure the backend CORS settings to allow the deployed frontend
+origin. Configure the frontend host to serve `index.html` for board
+routes such as `/board/:id`.
 
-- **Complex Curve Editing**: Freehand pencil strokes use midpoint quadratic smoothing upon creation; individual bezier control points cannot be repositioned after drawing.
-- **Offline Mesh Collaboration**: Synchronization relies on the central Socket.IO backend; peer-to-peer WebRTC fallback without server connectivity is not currently implemented.
-- **Public URL Secrecy**: Any person who obtains a board link can edit it; fine-grained view-only tokens are not yet supported.
+Set production environment variables in your hosting provider's
+dashboard. Do not put MongoDB credentials in frontend variables, because
+Vite exposes `VITE_` variables to the browser.
 
----
+The exact build and start commands depend on the scripts in the root,
+client, and server `package.json` files. Verify those commands before
+deploying.
 
-## Future Improvements
+## Anonymous sharing and security
 
-- Read-only share link generation (`/board/:id?mode=readonly`)
-- SVG vector export alongside existing high-resolution PNG export
-- Freehand arrow curving and connector snapping between shapes
-- Export to and import from local `.board` files
-- Optional password protection for individual boards without user accounts
+CollabBoard does not use accounts or passwords. Anyone who has a board
+link may be able to view and edit that board. Treat the link as a way to
+share access, not as authentication or a guarantee of privacy.
+
+Do not put passwords, confidential information, or private data on a
+shared board. For a public deployment, configure CORS, validate API and
+Socket.IO input, use rate limits, restrict payload sizes, and keep
+database credentials secret.
+
+## Current limitations
+
+-   Freehand strokes are editable as elements, but individual curve
+    control points may not be editable.
+-   Collaboration depends on the backend and an active network
+    connection.
+-   Anyone with a board link may have access; role-based permissions and
+    view-only links are not part of the anonymous access model unless
+    implemented separately.
+-   The availability of in-memory fallback storage depends on the
+    current server configuration. In-memory data can be lost when the
+    server restarts.
+
+## Possible next steps
+
+-   Add view-only sharing links
+-   Add SVG export and import/export of board files
+-   Improve shape connectors and snapping
+-   Add optional board passwords
+-   Improve conflict handling for simultaneous edits
+-   Add more accessibility and mobile interaction tests
+
+## Contributing
+
+Contributions and suggestions are welcome. Before opening a pull
+request, explain the change, run the relevant tests, and make sure no
+credentials or local environment files are included.
+
+## License
+
+No license has been specified yet. Add a `LICENSE` file before
+presenting the project as open source, and choose a license that matches
+how you want others to use the code.
